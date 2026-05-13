@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Food gestor | Estoque Inteligente</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="app_icon.png">
+    <meta name="theme-color" content="#ea1d2c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="app_icon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f0f4f8 0%, #d9e2ec 100%);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .app-container {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.94);
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ea1d2c 0%, #c91422 100%);
+            padding: 3rem 1.5rem;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .logo-area {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .logo-area img {
+            height: 150px !important; /* Aumentado para 150px e forçado */
+            width: auto !important;
+            max-width: 90% !important;
+            display: block;
+            filter: drop-shadow(0 6px 12px rgba(0,0,0,0.3));
+        }
+
+        .stats-badge {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            padding: 0.6rem 1.5rem;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: fit-content;
+        }
+
+        .dashboard-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        .form-section, .list-section, .card-alert {
+            background: white;
+            border-radius: 1.2rem;
+            padding: 1.5rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-section { flex: 1; min-width: 300px; }
+        .list-section { flex: 2; min-width: 300px; }
+        .alert-cards { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 1rem; }
+
+        .card-alert { border-left: 5px solid; padding: 1.2rem; }
+        .card-alert h3 { font-size: 1rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 8px; }
+
+        .alert-list { list-style: none; font-size: 0.85rem; }
+        .alert-list li { padding: 8px 0; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+
+        .badge-alert { background: #fee2e2; color: #b91c1c; padding: 2px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+
+        h2 { font-size: 1.2rem; margin-bottom: 1.2rem; border-left: 5px solid #ea1d2c; padding-left: 0.8rem; }
+
+        .form-group { margin-bottom: 1rem; }
+        label { font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 5px; color: #2c3e4e; }
+        input, select, textarea { width: 100%; padding: 12px; border-radius: 0.8rem; border: 1px solid #cbd5e1; font-size: 1rem; }
+
+        .btn-primary { background: #ea1d2c; color: white; border: none; padding: 12px; border-radius: 2rem; font-weight: 700; width: 100%; cursor: pointer; transition: opacity 0.2s; }
+        .btn-primary:active { opacity: 0.8; }
+
+        .btn-sm { padding: 6px 12px; border-radius: 2rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; border: none; }
+        .btn-sm.danger { background: #fee2e2; color: #b91c1c; }
+        .btn-sm.edit { background: #e0f2fe; color: #0369a1; }
+
+        .category-group {
+            margin-bottom: 1rem;
+            border: 1px solid #eef2f6;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+        .category-header {
+            background: #f8fafc;
+            padding: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .category-header:hover { background: #f1f5f9; }
+        .category-title { font-weight: 700; display: flex; align-items: center; gap: 10px; color: #1e293b; font-size: 1.1rem; }
+        .category-count { background: #e2e8f0; padding: 2px 10px; border-radius: 20px; font-size: 0.8rem; color: #475569; }
+        
+        .category-content { display: none; padding: 0.5rem; background: white; }
+        .category-group.active .category-content { display: block; }
+        .category-group.active .category-header { border-bottom: 1px solid #eef2f6; }
+
+        .item-card {
+            padding: 1.2rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+        .item-card:last-child { border-bottom: none; }
+        .item-info { flex: 1; }
+        .item-name { font-weight: 700; font-size: 1rem; color: #1e293b; }
+        .item-notes { font-size: 0.8rem; color: #64748b; margin-top: 4px; }
+        
+        .item-controls { display: flex; align-items: center; gap: 20px; }
+        .qty-display { text-align: center; min-width: 50px; }
+        .qty-val { font-weight: 800; font-size: 1.3rem; display: block; }
+        .qty-min { font-size: 0.7rem; color: #94a3b8; }
+
+        .qty-btns { display: flex; flex-direction: column; gap: 6px; }
+        .qty-btn-v { background: #f1f5f9; border: none; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; }
+        .qty-btn-v:active { background: #e2e8f0; }
+
+        .item-actions { display: flex; gap: 8px; }
+
+        .filter-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .filter-bar input { flex: 1; min-width: 200px; padding: 12px; }
+
+        .color-picker-group { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+        .color-preview { width: 25px; height: 25px; border-radius: 6px; border: 1px solid #ddd; }
+
+        footer { background: #f8fafc; padding: 1.5rem; text-align: center; font-size: 0.8rem; color: #64748b; }
+
+        @media (max-width: 768px) {
+            .header { padding: 1rem; }
+            .logo-area img { height: 50px; }
+            .dashboard-grid { padding: 1rem; gap: 1rem; }
+            .form-section, .list-section, .alert-cards { min-width: 100%; }
+            .item-card { flex-direction: column; align-items: flex-start; }
+            .item-controls { width: 100%; justify-content: space-between; margin-top: 12px; background: #f8fafc; padding: 12px; border-radius: 12px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="header">
+        <div class="logo-area">
+            <img src="logo_white.png" alt="Food Gestor">
+        </div>
+        <div class="stats-badge" id="globalStats">Conectando...</div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="form-section">
+            <h2 id="formTitle">➕ Cadastrar</h2>
+            <form id="itemForm">
+                <div class="form-group">
+                    <label>Nome do Produto *</label>
+                    <input type="text" id="productName" placeholder="Ex: Suco de Laranja" required>
+                </div>
+                <div class="form-group">
+                    <label>Quantidade Atual (UN)</label>
+                    <input type="number" id="quantity" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <select id="category">
+                        <option value="Sucos">🧃 Sucos</option>
+                        <option value="Refrigerantes">🥤 Refrigerantes</option>
+                        <option value="Sobremesas">🍨 Sobremesas</option>
+                        <option value="Chás">🍵 Chás</option>
+                        <option value="Bebidas Naturais">🌿 Bebidas Naturais</option>
+                    </select>
+                </div>
+                <div class="form-group" id="expiryGroup" style="display:none">
+                    <label>📅 Data de Fabricação (Validade 48h)</label>
+                    <input type="datetime-local" id="manufactureDate">
+                </div>
+                <div class="form-group">
+                    <label>Observação</label>
+                    <textarea id="notes" rows="2" placeholder="Marca, sabor..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Estoque Mínimo</label>
+                    <input type="number" id="minStock" value="5" min="0">
+                </div>
+                <input type="hidden" id="editId">
+                <button type="submit" id="submitBtn" class="btn-primary">➕ Adicionar ao Estoque</button>
+                <button type="button" id="cancelEditBtn" style="display:none; margin-top:8px; background: #64748b;" class="btn-primary">Cancelar Edição</button>
+            </form>
+            <button id="notifyBtn" style="margin-top:12px; background:#3b82f6;" class="btn-primary">🔔 Ativar Notificações</button>
+        </div>
+
+        <div class="list-section">
+            <h2>📦 Controle de Estoque</h2>
+            <div class="filter-bar">
+                <input type="text" id="searchInput" placeholder="🔍 Buscar produto...">
+            </div>
+            
+            <div id="inventoryContainer">
+                <!-- Categories and items will be rendered here -->
+            </div>
+            
+            <button id="clearAllBtn" class="btn-sm danger" style="margin-top:20px; width: 100%; padding: 15px; font-size: 0.9rem; font-weight: 800;">🗑️ Limpar Todo o Estoque</button>
+        </div>
+
+        <div class="alert-cards">
+            <div class="card-alert" style="border-left-color:#f59e0b">
+                <h3>⚠️ Próximos ao Vencimento</h3>
+                <ul class="alert-list" id="expiryAlertList"></ul>
+            </div>
+            <div class="card-alert" style="border-left-color:#ef4444">
+                <h3>🚨 Estoque Crítico</h3>
+                <ul class="alert-list" id="lowStockAlertList"></ul>
+            </div>
+            <div class="card-alert" style="border-left-color:#3b82f6">
+                <h3>🎨 Cores das Categorias</h3>
+                <div id="colorControls"></div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <span>design by gabriel</span>
+    </footer>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAkpofFleSHSvKqsn4g11IghCcB6iCAehA",
+        authDomain: "foodgestor-9ad74.firebaseapp.com",
+        projectId: "foodgestor-9ad74",
+        storageBucket: "foodgestor-9ad74.firebasestorage.app",
+        messagingSenderId: "1010961817979",
+        appId: "1:1010961817979:web:cf6f59fb6c24037a391dde"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const stockRef = ref(db, 'stock');
+    const colorsRef = ref(db, 'categoryColors');
+
+    let stockItems = [];
+    let categoryColors = {
+        "Sucos": "#fef3c7", "Refrigerantes": "#dbeafe", "Sobremesas": "#fce7f3", "Chás": "#dcfce7", "Bebidas Naturais": "#e0f2fe"
+    };
+
+    onValue(colorsRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) { categoryColors = data; renderColorControls(); renderInventory(); }
+        else { renderColorControls(); }
+    });
+
+    onValue(stockRef, (snapshot) => {
+        const data = snapshot.val();
+        stockItems = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+        renderAll();
+    });
+
+    function isPerishable(category, name) {
+        const cat = category || "";
+        const n = (name || "").toLowerCase();
+        if(cat === "Bebidas Naturais") {
+            const keywords = ["mineral", "com", "gas", "gás", "sem", "c/", "s/"];
+            return !keywords.some(kw => n.includes(kw));
+        }
+        return cat === "Sucos";
+    }
+
+    function getJuiceStatus(item) {
+        if(!isPerishable(item.category, item.name)) return null;
+        if(!item.manufactureDate) return { status: "⚠️ Sem data", class: "expiry-warning" };
+        const diffHours = (new Date() - new Date(item.manufactureDate)) / (1000 * 3600);
+        if(diffHours >= 48) return { status: "❌ DESCARTAR", class: "expiry-danger" };
+        if(diffHours >= 40) return { status: "⚠️ Trocar etiqueta", class: "expiry-warning" };
+        if(diffHours >= 24) return { status: "🟡 Válido (próx)", class: "expiry-warning" };
+        return { status: "✅ Fresco", class: "" };
+    }
+
+    function renderInventory() {
+        const search = document.getElementById("searchInput").value.toLowerCase();
+        const container = document.getElementById("inventoryContainer");
+        container.innerHTML = "";
+
+        const categories = ["Sucos", "Refrigerantes", "Sobremesas", "Chás", "Bebidas Naturais"];
+        
+        categories.forEach(cat => {
+            const items = stockItems.filter(i => i.category === cat && (search === "" || i.name.toLowerCase().includes(search)));
+            if (items.length === 0 && search !== "") return;
+
+            const group = document.createElement("div");
+            group.className = "category-group";
+            const bgColor = categoryColors[cat] || "#f8fafc";
+
+            group.innerHTML = `
+                <div class="category-header" style="border-left: 8px solid ${bgColor}">
+                    <div class="category-title">${getIcon(cat)} ${cat} <span class="category-count">${items.length}</span></div>
+                    <div class="category-arrow">▼</div>
+                </div>
+                <div class="category-content">
+                    ${items.length === 0 ? '<div style="padding:1rem; color:#94a3b8; font-size:0.8rem">Nenhum item nesta categoria</div>' : ''}
+                    ${items.map(item => {
+                        const status = getJuiceStatus(item);
+                        const low = item.quantity < (item.minStock || 5);
+                        return `
+                            <div class="item-card">
+                                <div class="item-info">
+                                    <div class="item-name">${escapeHtml(item.name)} ${low ? '⚠️' : ''}</div>
+                                    <div class="item-notes">${escapeHtml(item.notes || '')}</div>
+                                    ${status ? `<div style="font-size:0.7rem; margin-top:4px; font-weight:bold" class="${status.class}">${status.status}</div>` : ""}
+                                </div>
+                                <div class="item-controls">
+                                    <div class="qty-display">
+                                        <span class="qty-val" style="color: ${low ? '#ef4444' : '#1e293b'}">${item.quantity}</span>
+                                        <span class="qty-min">mín:${item.minStock || 5}</span>
+                                    </div>
+                                    <div class="qty-btns">
+                                        <button class="qty-btn-v" data-id="${item.id}" data-delta="1">+</button>
+                                        <button class="qty-btn-v" data-id="${item.id}" data-delta="-1">−</button>
+                                    </div>
+                                    <div class="item-actions">
+                                        <button class="btn-sm edit" data-id="${item.id}">✏️</button>
+                                        <button class="btn-sm danger" data-id="${item.id}">🗑️</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join("")}
+                </div>
+            `;
+
+            group.querySelector(".category-header").onclick = () => group.classList.toggle("active");
+            
+            // Fix: Prevent category from closing when clicking buttons inside
+            group.querySelectorAll(".qty-btn-v, .btn-sm").forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation(); // Stop the click from reaching the header
+                    const id = btn.dataset.id;
+                    if (btn.classList.contains('qty-btn-v')) {
+                        const delta = parseInt(btn.dataset.delta);
+                        const item = stockItems.find(i => i.id === id);
+                        if (item) update(ref(db, `stock/${id}`), { quantity: Math.max(0, item.quantity + delta) });
+                    } else if (btn.classList.contains('edit')) {
+                        window.editItem(id);
+                    } else if (btn.classList.contains('danger')) {
+                        if(confirm("Excluir item?")) remove(ref(db, `stock/${id}`));
+                    }
+                };
+            });
+
+            container.appendChild(group);
+        });
+    }
+
+    window.editItem = (id) => {
+        const item = stockItems.find(i => i.id === id);
+        if(!item) return;
+        document.getElementById("productName").value = item.name;
+        document.getElementById("quantity").value = item.quantity;
+        document.getElementById("category").value = item.category;
+        document.getElementById("notes").value = item.notes || "";
+        document.getElementById("minStock").value = item.minStock || 5;
+        document.getElementById("editId").value = item.id;
+        document.getElementById("expiryGroup").style.display = isPerishable(item.category, item.name) ? "block" : "none";
+        if(item.manufactureDate) document.getElementById("manufactureDate").value = item.manufactureDate.slice(0,16);
+        document.getElementById("formTitle").innerText = "✏️ Editar Item";
+        document.getElementById("submitBtn").innerHTML = "💾 Salvar Alterações";
+        document.getElementById("cancelEditBtn").style.display = "block";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    document.getElementById("itemForm").onsubmit = (e) => {
+        e.preventDefault();
+        const id = document.getElementById("editId").value;
+        const name = document.getElementById("productName").value.trim();
+        const category = document.getElementById("category").value;
+        const itemData = {
+            name,
+            quantity: parseInt(document.getElementById("quantity").value) || 0,
+            category,
+            notes: document.getElementById("notes").value,
+            minStock: parseInt(document.getElementById("minStock").value) || 0,
+            manufactureDate: isPerishable(category, name) ? document.getElementById("manufactureDate").value : null
+        };
+        if(id) update(ref(db, `stock/${id}`), itemData);
+        else push(stockRef, itemData);
+        resetForm();
+    };
+
+    function resetForm() {
+        document.getElementById("itemForm").reset();
+        document.getElementById("editId").value = "";
+        document.getElementById("formTitle").innerText = "➕ Cadastrar";
+        document.getElementById("submitBtn").innerHTML = "➕ Adicionar ao Estoque";
+        document.getElementById("cancelEditBtn").style.display = "none";
+        document.getElementById("expiryGroup").style.display = "none";
+    }
+
+    document.getElementById("cancelEditBtn").onclick = resetForm;
+    document.getElementById("clearAllBtn").onclick = () => {
+        if(confirm("ATENÇÃO: Apagar TODO o estoque permanentemente?")) remove(stockRef);
+    };
+
+    function renderColorControls() {
+        const container = document.getElementById("colorControls");
+        container.innerHTML = Object.keys(categoryColors).map(cat => `
+            <div class="color-picker-group">
+                <span style="flex:1; font-size:0.85rem">${cat}</span>
+                <input type="color" value="${categoryColors[cat]}" onchange="window.updateColor('${cat}', this.value)" style="width:35px; height:30px; cursor:pointer">
+                <div class="color-preview" style="background:${categoryColors[cat]}"></div>
+            </div>
+        `).join("");
+    }
+
+    window.updateColor = (cat, color) => {
+        categoryColors[cat] = color;
+        set(colorsRef, categoryColors);
+    };
+
+    function renderAll() {
+        renderInventory();
+        const low = stockItems.filter(i => i.quantity < (i.minStock||5));
+        document.getElementById("lowStockAlertList").innerHTML = low.length ? low.map(i => `<li>${i.name} <span class="badge-alert">${i.quantity} un</span></li>`).join("") : "<li>✅ Tudo em dia</li>";
+        const expiring = stockItems.filter(i => isPerishable(i.category, i.name) && i.manufactureDate && (new Date() - new Date(i.manufactureDate)) / (1000*3600) >= 24);
+        document.getElementById("expiryAlertList").innerHTML = expiring.length ? expiring.map(i => `<li><strong>${i.name}</strong> <span class="badge-alert">${getJuiceStatus(i).status}</span></li>`).join("") : "<li>Nenhum produto vencendo</li>";
+        const totalUnits = stockItems.reduce((a,b) => a + (b.quantity||0), 0);
+        document.getElementById("globalStats").innerHTML = `📦 ${stockItems.length} itens | ${totalUnits} UN | ⚠️ Baixo: ${low.length}`;
+    }
+
+    function getIcon(cat) { return { "Sucos":"🧃","Refrigerantes":"🥤","Sobremesas":"🍨","Chás":"🍵","Bebidas Naturais":"🌿" }[cat] || "📦"; }
+    function escapeHtml(str) { return str ? str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]) : ""; }
+    document.getElementById("searchInput").oninput = () => renderInventory();
+    document.getElementById("category").onchange = (e) => document.getElementById("expiryGroup").style.display = isPerishable(e.target.value, document.getElementById("productName").value) ? "block" : "none";
+    document.getElementById("productName").oninput = (e) => document.getElementById("expiryGroup").style.display = isPerishable(document.getElementById("category").value, e.target.value) ? "block" : "none";
+    document.getElementById("notifyBtn").onclick = async () => { if(await Notification.requestPermission() === 'granted') alert("Ativado!"); };
+</script>
+</body>
+</html>
