@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Food gestor | Estoque Inteligente</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="app_icon.png">
+    <meta name="theme-color" content="#ea1d2c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="app_icon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f0f4f8 0%, #d9e2ec 100%);
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .app-container {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.94);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ea1d2c 0%, #c91422 100%);
+            padding: 1rem 1.5rem;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            min-height: 120px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .logo-area img {
+            height: 100px !important;
+            width: auto !important;
+            display: block;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        .stats-badge {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(4px);
+            padding: 0.8rem 1.5rem;
+            border-radius: 60px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .main-content {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            flex: 1;
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-add-new {
+            background: #ea1d2c;
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            border-radius: 50px;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(234, 29, 44, 0.3);
+            transition: transform 0.2s;
+        }
+        .btn-add-new:active { transform: scale(0.95); }
+
+        .list-section {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 2rem;
+            padding: 2rem;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: modalSlideUp 0.3s ease-out;
+        }
+
+        @keyframes modalSlideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: #f1f5f9;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-group { margin-bottom: 1.2rem; }
+        label { font-weight: 700; font-size: 0.9rem; display: block; margin-bottom: 6px; color: #1e293b; }
+        input, select, textarea { width: 100%; padding: 14px; border-radius: 1rem; border: 1px solid #e2e8f0; font-size: 1rem; background: #f8fafc; }
+        input:focus { outline: 2px solid #ea1d2c; border-color: transparent; }
+
+        .btn-primary { background: #ea1d2c; color: white; border: none; padding: 16px; border-radius: 50px; font-weight: 800; width: 100%; cursor: pointer; font-size: 1rem; margin-top: 10px; }
+
+        /* Inventory Styles */
+        .category-group { margin-bottom: 1rem; border: 1px solid #f1f5f9; border-radius: 1.2rem; overflow: visible; position: relative; }
+        .category-header { background: #f8fafc; padding: 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; position: relative; border-radius: 1.2rem; }
+        
+        /* Color Bar Button */
+        .color-bar-btn {
+            width: 20px;
+            height: 60px;
+            cursor: pointer;
+            border-radius: 1.2rem 0 0 1.2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Floating Color Menu */
+        .color-menu-floating {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: white;
+            padding: 10px 15px;
+            border-radius: 50px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            display: none;
+            gap: 12px;
+            z-index: 100;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+        }
+        .color-menu-floating.active { display: flex; animation: fadeInRight 0.2s ease-out; }
+
+        @keyframes fadeInRight {
+            from { opacity: 0; transform: translateY(-50%) translateX(-10px); }
+            to { opacity: 1; transform: translateY(-50%) translateX(0); }
+        }
+
+        .color-dot-mini {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .color-dot-mini:hover { transform: scale(1.2); }
+
+        .category-info-wrapper {
+            flex: 1;
+            padding: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-title { font-weight: 800; display: flex; align-items: center; gap: 12px; color: #1e293b; font-size: 1.1rem; }
+        .category-count { background: #e2e8f0; padding: 3px 12px; border-radius: 20px; font-size: 0.8rem; }
+        
+        .category-content { display: none; padding: 0.5rem; background: white; }
+        .category-group.active .category-content { display: block; }
+
+        .item-card { padding: 1.2rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+        .item-card:last-child { border-bottom: none; }
+        .item-name { font-weight: 700; font-size: 1.05rem; color: #1e293b; }
+        .item-notes { font-size: 0.85rem; color: #64748b; margin-top: 4px; }
+        
+        .item-controls { display: flex; align-items: center; gap: 20px; }
+        .qty-val { font-weight: 800; font-size: 1.4rem; color: #1e293b; }
+        .qty-btns { display: flex; flex-direction: column; gap: 6px; }
+        .qty-btn-v { background: #f1f5f9; border: none; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1.5rem; }
+
+        .btn-sm { padding: 8px 15px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; cursor: pointer; border: none; }
+        .btn-sm.danger { background: #fee2e2; color: #b91c1c; }
+        .btn-sm.edit { background: #e0f2fe; color: #0369a1; }
+
+        .alert-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1rem; }
+        .card-alert { background: white; border-radius: 1.5rem; padding: 1.5rem; border-left: 6px solid; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+
+        footer { padding: 2rem; text-align: center; font-size: 0.85rem; color: #94a3b8; font-weight: 600; }
+
+        @media (max-width: 768px) {
+            .header { min-height: 100px; padding: 1rem; }
+            .logo-area img { height: 70px !important; }
+            .stats-badge { font-size: 0.9rem; padding: 0.6rem 1rem; }
+            .item-card { flex-direction: column; align-items: flex-start; }
+            .item-controls { width: 100%; justify-content: space-between; background: #f8fafc; padding: 12px; border-radius: 15px; }
+            .modal-content { padding: 1.5rem; border-radius: 1.5rem; }
+            .color-menu-floating { left: 10px; top: -45px; transform: none; }
+            @keyframes fadeInRight {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="header">
+        <div class="logo-area">
+            <img src="logo_white.png" alt="Food Gestor">
+        </div>
+        <div class="stats-badge" id="globalStats">Conectando...</div>
+    </div>
+
+    <div class="main-content">
+        <div class="action-bar">
+            <button class="btn-add-new" id="openModalBtn">➕ Novo Item</button>
+            <input type="text" id="searchInput" placeholder="🔍 Buscar produto..." style="max-width: 300px; background: white;">
+        </div>
+
+        <div class="list-section">
+            <div id="inventoryContainer"></div>
+            <button id="clearAllBtn" class="btn-sm danger" style="margin-top:20px; width: 100%; padding: 15px; font-size: 0.9rem;">🗑️ Limpar Todo o Estoque</button>
+        </div>
+
+        <div class="alert-grid">
+            <div class="card-alert" style="border-left-color:#f59e0b">
+                <h3>⚠️ Próximos ao Vencimento</h3>
+                <ul id="expiryAlertList" style="list-style:none; margin-top:10px; font-size:0.9rem;"></ul>
+            </div>
+            <div class="card-alert" style="border-left-color:#ef4444">
+                <h3>🚨 Estoque Crítico</h3>
+                <ul id="lowStockAlertList" style="list-style:none; margin-top:10px; font-size:0.9rem;"></ul>
+            </div>
+        </div>
+    </div>
+
+    <footer>design by gabriel</footer>
+</div>
+
+<!-- Modal de Cadastro -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content">
+        <button class="modal-close" id="closeModalBtn">✕</button>
+        <h2 id="modalTitle" style="margin-bottom:1.5rem; border-left: 5px solid #ea1d2c; padding-left: 10px;">➕ Novo Item</h2>
+        <form id="itemForm">
+            <input type="hidden" id="editId">
+            <div class="form-group">
+                <label>Nome do Produto *</label>
+                <input type="text" id="productName" placeholder="Ex: Suco de Laranja" required>
+            </div>
+            <div class="form-group">
+                <label>Quantidade Atual (UN)</label>
+                <input type="number" id="quantity" value="0" min="0">
+            </div>
+            <div class="form-group">
+                <label>Categoria</label>
+                <select id="category">
+                    <option value="Sucos">🧃 Sucos</option>
+                    <option value="Refrigerantes">🥤 Refrigerantes</option>
+                    <option value="Sobremesas">🍨 Sobremesas</option>
+                    <option value="Chás">🍵 Chás</option>
+                    <option value="Bebidas Naturais">🌿 Bebidas Naturais</option>
+                </select>
+            </div>
+            <div class="form-group" id="expiryGroup" style="display:none">
+                <label>📅 Data de Fabricação (48h)</label>
+                <input type="datetime-local" id="manufactureDate">
+            </div>
+            <div class="form-group">
+                <label>Observação</label>
+                <textarea id="notes" rows="2" placeholder="Marca, sabor..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Estoque Mínimo</label>
+                <input type="number" id="minStock" value="5" min="0">
+            </div>
+            <button type="submit" id="submitBtn" class="btn-primary">➕ Adicionar ao Estoque</button>
+        </form>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAkpofFleSHSvKqsn4g11IghCcB6iCAehA",
+        authDomain: "foodgestor-9ad74.firebaseapp.com",
+        projectId: "foodgestor-9ad74",
+        storageBucket: "foodgestor-9ad74.firebasestorage.app",
+        messagingSenderId: "1010961817979",
+        appId: "1:1010961817979:web:cf6f59fb6c24037a391dde"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const stockRef = ref(db, 'stock');
+    const colorsRef = ref(db, 'categoryColors');
+    
+    let stockItems = [];
+    let openCategories = new Set();
+    let categoryColors = {
+        "Sucos": "#4285F4", "Refrigerantes": "#EA4335", "Sobremesas": "#A142F4", "Chás": "#9E9E9E", "Bebidas Naturais": "#FBBC05"
+    };
+
+    const presetColors = [
+        { name: "Azul", hex: "#4285F4" },
+        { name: "Vermelho", hex: "#EA4335" },
+        { name: "Roxo", hex: "#A142F4" },
+        { name: "Cinza", hex: "#9E9E9E" },
+        { name: "Amarelo", hex: "#FBBC05" }
+    ];
+
+    const modal = document.getElementById('modalOverlay');
+    const openBtn = document.getElementById('openModalBtn');
+    const closeBtn = document.getElementById('closeModalBtn');
+
+    openBtn.onclick = () => { resetForm(); modal.style.display = 'flex'; };
+    closeBtn.onclick = () => modal.style.display = 'none';
+    window.onclick = (e) => { if(e.target == modal) modal.style.display = 'none'; };
+
+    onValue(colorsRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) categoryColors = data;
+        renderInventory();
+    });
+
+    onValue(stockRef, (snapshot) => {
+        const data = snapshot.val();
+        stockItems = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+        renderAll();
+    });
+
+    function isPerishable(category, name) {
+        const cat = category || "";
+        const n = (name || "").toLowerCase();
+        if(cat === "Bebidas Naturais") {
+            const keywords = ["mineral", "com", "gas", "gás", "sem", "c/", "s/"];
+            return !keywords.some(kw => n.includes(kw));
+        }
+        return cat === "Sucos";
+    }
+
+    function getJuiceStatus(item) {
+        if(!isPerishable(item.category, item.name)) return null;
+        if(!item.manufactureDate) return { status: "⚠️ Sem data", class: "expiry-warning" };
+        const diffHours = (new Date() - new Date(item.manufactureDate)) / (1000 * 3600);
+        if(diffHours >= 48) return { status: "❌ DESCARTAR", class: "expiry-danger" };
+        if(diffHours >= 40) return { status: "⚠️ Trocar etiqueta", class: "expiry-warning" };
+        if(diffHours >= 24) return { status: "🟡 Válido (próx)", class: "expiry-warning" };
+        return { status: "✅ Fresco", class: "" };
+    }
+
+    function renderInventory() {
+        const search = document.getElementById("searchInput").value.toLowerCase();
+        const container = document.getElementById("inventoryContainer");
+        container.innerHTML = "";
+
+        const categories = ["Sucos", "Refrigerantes", "Sobremesas", "Chás", "Bebidas Naturais"];
+        
+        categories.forEach(cat => {
+            const items = stockItems.filter(i => i.category === cat && (search === "" || i.name.toLowerCase().includes(search)));
+            if (items.length === 0 && search !== "") return;
+
+            const group = document.createElement("div");
+            group.className = "category-group";
+            if (openCategories.has(cat)) group.classList.add("active");
+            
+            const catColor = categoryColors[cat] || "#9E9E9E";
+
+            group.innerHTML = `
+                <div class="category-header">
+                    <div class="color-bar-btn" style="background-color: ${catColor}" title="Mudar cor"></div>
+                    <div class="color-menu-floating">
+                        ${presetColors.map(c => `
+                            <div class="color-dot-mini" 
+                                 style="background-color: ${c.hex}" 
+                                 data-cat="${cat}" data-color="${c.hex}"></div>
+                        `).join("")}
+                    </div>
+                    <div class="category-info-wrapper">
+                        <div class="category-title">${getIcon(cat)} ${cat} <span class="category-count">${items.length}</span></div>
+                        <div class="category-arrow">${openCategories.has(cat) ? '▲' : '▼'}</div>
+                    </div>
+                </div>
+                <div class="category-content">
+                    ${items.length === 0 ? '<div style="padding:1rem; color:#94a3b8; font-size:0.8rem">Vazio</div>' : ''}
+                    ${items.map(item => {
+                        const status = getJuiceStatus(item);
+                        const low = item.quantity < (item.minStock || 5);
+                        return `
+                            <div class="item-card">
+                                <div class="item-info">
+                                    <div class="item-name">${escapeHtml(item.name)} ${low ? '⚠️' : ''}</div>
+                                    <div class="item-notes">${escapeHtml(item.notes || '')}</div>
+                                    ${status ? `<div style="font-size:0.7rem; margin-top:4px; font-weight:bold">${status.status}</div>` : ""}
+                                </div>
+                                <div class="item-controls">
+                                    <div class="qty-display" style="text-align:center">
+                                        <span class="qty-val" style="color: ${low ? '#ef4444' : '#1e293b'}">${item.quantity}</span>
+                                        <div style="font-size:0.7rem; color:#94a3b8">mín:${item.minStock || 5}</div>
+                                    </div>
+                                    <div class="qty-btns">
+                                        <button class="qty-btn-v" data-id="${item.id}" data-delta="1">+</button>
+                                        <button class="qty-btn-v" data-id="${item.id}" data-delta="-1">−</button>
+                                    </div>
+                                    <div class="item-actions">
+                                        <button class="btn-sm edit" data-id="${item.id}">✏️</button>
+                                        <button class="btn-sm danger" data-id="${item.id}">🗑️</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join("")}
+                </div>
+            `;
+
+            // Color Bar Logic
+            const colorBar = group.querySelector(".color-bar-btn");
+            const colorMenu = group.querySelector(".color-menu-floating");
+            
+            colorBar.onclick = (e) => {
+                e.stopPropagation();
+                // Fecha outros menus abertos
+                document.querySelectorAll('.color-menu-floating').forEach(m => {
+                    if(m !== colorMenu) m.classList.remove('active');
+                });
+                colorMenu.classList.toggle("active");
+            };
+
+            group.querySelectorAll(".color-dot-mini").forEach(dot => {
+                dot.onclick = (e) => {
+                    e.stopPropagation();
+                    const c = dot.dataset.cat;
+                    const color = dot.dataset.color;
+                    categoryColors[c] = color;
+                    set(colorsRef, categoryColors);
+                    colorMenu.classList.remove("active");
+                };
+            });
+
+            group.querySelector(".category-info-wrapper").onclick = () => {
+                if (openCategories.has(cat)) openCategories.delete(cat);
+                else openCategories.add(cat);
+                renderInventory();
+            };
+            
+            group.querySelectorAll(".qty-btn-v, .btn-sm").forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.id;
+                    if (btn.classList.contains('qty-btn-v')) {
+                        const delta = parseInt(btn.dataset.delta);
+                        const item = stockItems.find(i => i.id === id);
+                        if (item) update(ref(db, `stock/${id}`), { quantity: Math.max(0, item.quantity + delta) });
+                    } else if (btn.classList.contains('edit')) {
+                        window.editItem(id);
+                    } else if (btn.classList.contains('danger')) {
+                        if(confirm("Excluir item?")) remove(ref(db, `stock/${id}`));
+                    }
+                };
+            });
+
+            container.appendChild(group);
+        });
+    }
+
+    // Fecha o menu de cores ao clicar fora
+    window.addEventListener('click', () => {
+        document.querySelectorAll('.color-menu-floating').forEach(m => m.classList.remove('active'));
+    });
+
+    window.editItem = (id) => {
+        const item = stockItems.find(i => i.id === id);
+        if(!item) return;
+        document.getElementById("productName").value = item.name;
+        document.getElementById("quantity").value = item.quantity;
+        document.getElementById("category").value = item.category;
+        document.getElementById("notes").value = item.notes || "";
+        document.getElementById("minStock").value = item.minStock || 5;
+        document.getElementById("editId").value = item.id;
+        document.getElementById("expiryGroup").style.display = isPerishable(item.category, item.name) ? "block" : "none";
+        if(item.manufactureDate) document.getElementById("manufactureDate").value = item.manufactureDate.slice(0,16);
+        document.getElementById("modalTitle").innerText = "✏️ Editar Item";
+        document.getElementById("submitBtn").innerHTML = "💾 Salvar Alterações";
+        modal.style.display = 'flex';
+    };
+
+    document.getElementById("itemForm").onsubmit = (e) => {
+        e.preventDefault();
+        const id = document.getElementById("editId").value;
+        const name = document.getElementById("productName").value.trim();
+        const category = document.getElementById("category").value;
+        const itemData = {
+            name,
+            quantity: parseInt(document.getElementById("quantity").value) || 0,
+            category,
+            notes: document.getElementById("notes").value,
+            minStock: parseInt(document.getElementById("minStock").value) || 0,
+            manufactureDate: isPerishable(category, name) ? document.getElementById("manufactureDate").value : null
+        };
+        if(id) update(ref(db, `stock/${id}`), itemData);
+        else push(stockRef, itemData);
+        modal.style.display = 'none';
+        resetForm();
+    };
+
+    function resetForm() {
+        document.getElementById("itemForm").reset();
+        document.getElementById("editId").value = "";
+        document.getElementById("modalTitle").innerText = "➕ Novo Item";
+        document.getElementById("submitBtn").innerHTML = "➕ Adicionar ao Estoque";
+        document.getElementById("expiryGroup").style.display = "none";
+    }
+
+    document.getElementById("clearAllBtn").onclick = () => {
+        if(confirm("Apagar TODO o estoque?")) remove(stockRef);
+    };
+
+    function renderAll() {
+        renderInventory();
+        const low = stockItems.filter(i => i.quantity < (i.minStock||5));
+        document.getElementById("lowStockAlertList").innerHTML = low.length ? low.map(i => `<li style="padding:5px 0; border-bottom:1px solid #eee">${i.name} <span style="color:#ef4444; font-weight:bold">(${i.quantity} un)</span></li>`).join("") : "<li>✅ Tudo em dia</li>";
+        const expiring = stockItems.filter(i => isPerishable(i.category, i.name) && i.manufactureDate && (new Date() - new Date(i.manufactureDate)) / (1000*3600) >= 24);
+        document.getElementById("expiryAlertList").innerHTML = expiring.length ? expiring.map(i => `<li style="padding:5px 0; border-bottom:1px solid #eee"><strong>${i.name}</strong>: ${getJuiceStatus(i).status}</li>`).join("") : "<li>Nenhum vencendo</li>";
+        const totalUnits = stockItems.reduce((a,b) => a + (b.quantity||0), 0);
+        document.getElementById("globalStats").innerHTML = `📦 ${stockItems.length} itens | ${totalUnits} UN | ⚠️ Baixo: ${low.length}`;
+    }
+
+    function getIcon(cat) { return { "Sucos":"🧃","Refrigerantes":"🥤","Sobremesas":"🍨","Chás":"🍵","Bebidas Naturais":"🌿" }[cat] || "📦"; }
+    function escapeHtml(str) { return str ? str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]) : ""; }
+    document.getElementById("searchInput").oninput = () => renderInventory();
+    document.getElementById("category").onchange = (e) => document.getElementById("expiryGroup").style.display = isPerishable(e.target.value, document.getElementById("productName").value) ? "block" : "none";
+    document.getElementById("productName").oninput = (e) => document.getElementById("expiryGroup").style.display = isPerishable(document.getElementById("category").value, e.target.value) ? "block" : "none";
+</script>
+</body>
+</html>
